@@ -49,6 +49,8 @@ app.get("/participants", (req, res) => {
 
 app.post("/messages", (req, res) => {
   const { to, text, type } = req.body;
+  console.log(req.body);
+
   const from = req.header("user");
 
   db.collection("messages")
@@ -64,8 +66,34 @@ app.post("/messages", (req, res) => {
   res.sendStatus(201);
 });
 
-app.get("/messages", (req, res) => {});
+app.get("/messages", (req, res) => {
+  //   const limit = parseInt(req.query.limit);
+  //   const messages = db
+  //     .collection("messages")
+  //     .find({})
+  //     .toArray()
+  //     .catch((e) => res.sendStatus(500));
+  //   console.log(messages);
+  //     if (limit) {
+  //       const messagesLimit = messages.slice(-limit);
+  //       res.send(messagesLimit);
+  //     }
+});
 
-app.post("/status", (req, res) => {});
+app.post("/status", (req, res) => {
+  const name = req.header("user");
+  const isParticipant = db.collection("users").findOne({ name: name });
+
+  if (!isParticipant) {
+    res.sendStatus(400);
+  }
+
+  db.collection("users").updateOne(
+    { name: name },
+    { $set: { lastStatus: Date.now() } }
+  );
+
+  res.sendStatus(200);
+});
 
 app.listen(5000, () => console.log("Server On!"));
