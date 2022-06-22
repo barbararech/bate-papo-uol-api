@@ -47,7 +47,22 @@ app.get("/participants", (req, res) => {
     .catch((e) => res.sendStatus(500));
 });
 
-app.post("/messages", (req, res) => {});
+app.post("/messages", (req, res) => {
+  const { to, text, type } = req.body;
+  const from = req.header("user");
+
+  db.collection("messages")
+    .insertOne({
+      from,
+      to,
+      text,
+      type,
+      time: dayjs().format("HH:mm:ss"),
+    })
+    .catch(() => res.sendStatus(500));
+
+  res.sendStatus(201);
+});
 
 app.get("/messages", (req, res) => {});
 
