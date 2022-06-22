@@ -21,7 +21,7 @@ app.post("/participants", (req, res) => {
 
   db.collection("users")
     .insertOne({
-      name:  name ,
+      name: name,
       lastStatus: Date.now(),
     })
     .catch(() => res.sendStatus(500));
@@ -32,14 +32,20 @@ app.post("/participants", (req, res) => {
       to: "Todos",
       text: "entra na sala...",
       type: "status",
-      time: dayjs().format('HH:mm:ss'),
+      time: dayjs().format("HH:mm:ss"),
     })
     .catch(() => res.sendStatus(500));
 
-    res.sendStatus(201);
+  res.sendStatus(201);
 });
 
-app.get("/participants", (req, res) => {});
+app.get("/participants", (req, res) => {
+  db.collection("users")
+    .find({})
+    .toArray()
+    .then((users) => res.send(users))
+    .catch((e) => res.sendStatus(500));
+});
 
 app.post("/messages", (req, res) => {});
 
