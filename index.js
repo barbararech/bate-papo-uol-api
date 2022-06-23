@@ -16,54 +16,54 @@ mongoClient.connect().then(() => {
   db = mongoClient.db("bate-papo-uol");
 });
 
-app.post("/participants", (req, res) => {
+app.post("/participants", async (req, res) => {
   const { name } = req.body;
 
-  db.collection("users")
-    .insertOne({
+  try {
+    await db.collection("users").insertOne({
       name: name,
       lastStatus: Date.now(),
-    })
-    .catch(() => res.sendStatus(500));
-
-  db.collection("messages")
-    .insertOne({
+    });
+    await db.collection("messages").insertOne({
       from: name,
       to: "Todos",
       text: "entra na sala...",
       type: "status",
       time: dayjs().format("HH:mm:ss"),
-    })
-    .catch(() => res.sendStatus(500));
-
-  res.sendStatus(201);
+    });
+    res.sendStatus(201);
+  } catch (error) {
+    res.sendStatus(500);
+  }
 });
 
-app.get("/participants", (req, res) => {
-  db.collection("users")
-    .find({})
-    .toArray()
-    .then((users) => res.send(users))
-    .catch((e) => res.sendStatus(500));
+app.get("/participants", async (req, res) => {
+  try {
+    const users = await db.collection("users").find({}).toArray();
+    res.send(users);
+  } catch (error) {
+    res.sendStatus(500);
+  }
 });
 
-app.post("/messages", (req, res) => {
+app.post("/messages", async (req, res) => {
   const { to, text, type } = req.body;
   console.log(req.body);
 
   const from = req.header("user");
 
-  db.collection("messages")
-    .insertOne({
+  try {
+    await db.collection("messages").insertOne({
       from,
       to,
       text,
       type,
       time: dayjs().format("HH:mm:ss"),
-    })
-    .catch(() => res.sendStatus(500));
-  console.log(type);
-  res.sendStatus(201);
+    });
+    res.sendStatus(201);
+  } catch (error) {
+    res.sendStatus(500);
+  }
 });
 
 app.get("/messages", async (req, res) => {
@@ -72,6 +72,7 @@ app.get("/messages", async (req, res) => {
 
   try {
     const messages = await db.collection("messages").find({}).toArray();
+
     const filteredMessages = messages.filter((message) => {
       const { from, to, type } = message;
       if (type === "message" || type === "status") {
@@ -81,7 +82,6 @@ app.get("/messages", async (req, res) => {
       }
     });
 
-    // console.log(filteredMessages);
     if (limit) {
       const messagesLimit = filteredMessages.slice(-limit);
       res.send(messagesLimit);
@@ -91,20 +91,23 @@ app.get("/messages", async (req, res) => {
   }
 });
 
-app.post("/status", (req, res) => {
+app.post("/status", async (req, res) => {
   const name = req.header("user");
-  const isParticipant = db.collection("users").findOne({ name: name });
 
-  if (!isParticipant) {
-    res.sendStatus(400);
+  try {
+    const isParticipant = await db.collection("users").findOne({ name: name });
+
+    if (!isParticipant) {
+      res.sendStatus(400);
+    }
+
+    await db
+      .collection("users")
+      .updateOne({ name: name }, { $set: { lastStatus: Date.now() } }); 
+    res.sendStatus(200);
+  } catch (error) {
+    res.sendStatus(500);
   }
-
-  db.collection("users").updateOne(
-    { name: name },
-    { $set: { lastStatus: Date.now() } }
-  );
-
-  res.sendStatus(200);
 });
 
 app.listen(5000, () => console.log("Server On!"));
