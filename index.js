@@ -84,8 +84,9 @@ app.get("/messages", async (req, res) => {
 
     if (limit) {
       const messagesLimit = filteredMessages.slice(-limit);
-      res.send(messagesLimit);
+      return res.send(messagesLimit);
     }
+    res.send(filteredMessages);
   } catch (error) {
     res.sendStatus(500);
   }
@@ -103,7 +104,7 @@ app.post("/status", async (req, res) => {
 
     await db
       .collection("users")
-      .updateOne({ name: name }, { $set: { lastStatus: Date.now() } }); 
+      .updateOne({ name: name }, { $set: { lastStatus: Date.now() } });
     res.sendStatus(200);
   } catch (error) {
     res.sendStatus(500);
