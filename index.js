@@ -62,22 +62,33 @@ app.post("/messages", (req, res) => {
       time: dayjs().format("HH:mm:ss"),
     })
     .catch(() => res.sendStatus(500));
-
+  console.log(type);
   res.sendStatus(201);
 });
 
-app.get("/messages", (req, res) => {
-  //   const limit = parseInt(req.query.limit);
-  //   const messages = db
-  //     .collection("messages")
-  //     .find({})
-  //     .toArray()
-  //     .catch((e) => res.sendStatus(500));
-  //   console.log(messages);
-  //     if (limit) {
-  //       const messagesLimit = messages.slice(-limit);
-  //       res.send(messagesLimit);
-  //     }
+app.get("/messages", async (req, res) => {
+  const limit = parseInt(req.query.limit);
+  const user = req.header("user");
+
+  try {
+    const messages = await db.collection("messages").find({}).toArray();
+    const filteredMessages = messages.filter((message) => {
+      const { from, to, type } = message;
+      if (type === "message" || type === "status") {
+        return true;
+      } else if (to === "Todos" || to === user || from === user) {
+        return true;
+      }
+    });
+
+    // console.log(filteredMessages);
+    if (limit) {
+      const messagesLimit = filteredMessages.slice(-limit);
+      res.send(messagesLimit);
+    }
+  } catch (error) {
+    res.sendStatus(500);
+  }
 });
 
 app.post("/status", (req, res) => {
