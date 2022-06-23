@@ -48,8 +48,6 @@ app.get("/participants", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
   const { to, text, type } = req.body;
-  console.log(req.body);
-
   const from = req.header("user");
 
   try {
@@ -75,6 +73,7 @@ app.get("/messages", async (req, res) => {
 
     const filteredMessages = messages.filter((message) => {
       const { from, to, type } = message;
+
       if (type === "message" || type === "status") {
         return true;
       } else if (to === "Todos" || to === user || from === user) {
@@ -86,6 +85,7 @@ app.get("/messages", async (req, res) => {
       const messagesLimit = filteredMessages.slice(-limit);
       return res.send(messagesLimit);
     }
+
     res.send(filteredMessages);
   } catch (error) {
     res.sendStatus(500);
@@ -99,7 +99,7 @@ app.post("/status", async (req, res) => {
     const isParticipant = await db.collection("users").findOne({ name: name });
 
     if (!isParticipant) {
-      res.sendStatus(400);
+      res.sendStatus(404);
     }
 
     await db
@@ -110,5 +110,30 @@ app.post("/status", async (req, res) => {
     res.sendStatus(500);
   }
 });
+
+setInterval(async () => {
+  try {
+    const users = await db.collection("users").find({}).toArray();
+    const timeNow = Date.now();
+
+    users.map(async (user) => {
+      const { lastStatus, name } = user;
+
+      if (timeNow - lastStatus > 10000) {
+        await db.collection("users").deleteOne({ lastStatus });
+        await db.collection("messages").insertOne({
+          from: name,
+          to: "Todos",
+          text: "sai da sala...",
+          type: "status",
+          time: dayjs().format("HH:mm:ss"),
+        });
+        return console.log("Usuário não está mais ativo");
+      }
+    });
+  } catch (error) {
+    console.log("Erro ao excluir usuário inativo");
+  }
+}, 15000);
 
 app.listen(5000, () => console.log("Server On!"));
